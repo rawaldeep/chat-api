@@ -3,181 +3,250 @@
 // Use dotenv to read .env vars into Node
 require('dotenv').config();
 
-// Imports dependencies and set up http server
-const
-  request = require('request'),
-  express = require('express'),
-  { urlencoded, json } = require('body-parser'),
-  app = express();
+const apiai = require("apiai");
+const express = require("express");
+const bodyParser = require("body-parser");
+const uuid = require("uuid");
+const axios = require('axios');
+const app = express();
 
-// Parse application/x-www-form-urlencoded
-app.use(urlencoded({ extended: true }));
+///setting Port
+app.set("port", process.env.PORT || 5000);
 
-// Parse application/json
-app.use(json());
+//serve static files in the public directory
+app.use(express.static("public"));
 
-// Respond with 'Hello World' when a GET request is made to the homepage
-app.get('/', function (_req, res) {
-  res.send('Hello World');
+// Process application/x-www-form-urlencoded
+app.use(
+  bodyParser.urlencoded({
+    extended: false
+  })
+);
+
+// Process application/json
+app.use(bodyParser.json());
+
+// Index route
+app.get("/", function (req, res) {
+  res.send("Hello world, I am a chat bot");
 });
 
-// Adds support for GET requests to our webhook
-app.get('/webhook', (req, res) => {
-
-  // Your verify token. Should be a random string.
-  const VERIFY_TOKEN = process.env.VERIFY_TOKEN;
-
-  // Parse the query params
-  let mode = req.query['hub.mode'];
-  let token = req.query['hub.verify_token'];
-  let challenge = req.query['hub.challenge'];
-
-  // Checks if a token and mode is in the query string of the request
-  if (mode && token) {
-
-    // Checks the mode and token sent is correct
-    if (mode === 'subscribe' && token === VERIFY_TOKEN) {
-
-      // Responds with the challenge token from the request
-      console.log('WEBHOOK_VERIFIED');
-      res.status(200).send(challenge);
-
+// for Facebook verification
+app.get("/webhook/", function (req, res) {
+    console.log("request");
+    if (
+      req.query["hub.mode"] === "subscribe" &&
+      req.query["hub.verify_token"] === process.env.VERIFY_TOKEN
+    ) {
+      res.status(200).send(req.query["hub.challenge"]);
     } else {
-      // Responds with '403 Forbidden' if verify tokens do not match
+      console.error("Failed validation. Make sure the validation tokens match.");
       res.sendStatus(403);
     }
-  }
-});
+  });
 
-// Creates the endpoint for your webhook
-app.post('/webhook', (req, res) => {
-  let body = req.body;
-
-  // Checks if this is an event from a page subscription
-  if (body.object === 'page') {
-
-    // Iterates over each entry - there may be multiple if batched
-    body.entry.forEach(function(entry) {
-
-      // Gets the body of the webhook event
-      let webhookEvent = entry.messaging[0];
-      console.log(webhookEvent);
-
-      // Get the sender PSID
-      let senderPsid = webhookEvent.sender.id;
-      console.log('Sender PSID: ' + senderPsid);
-
-      // Check if the event is a message or postback and
-      // pass the event to the appropriate handler function
-      if (webhookEvent.message) {
-        handleMessage(senderPsid, webhookEvent.message);
-      } else if (webhookEvent.postback) {
-        handlePostback(senderPsid, webhookEvent.postback);
-      }
-    });
-
-    // Returns a '200 OK' response to all requests
-    res.status(200).send('EVENT_RECEIVED');
-  } else {
-
-    // Returns a '404 Not Found' if event is not from a page subscription
-    res.sendStatus(404);
-  }
-});
-
-// Handles messages events
-function handleMessage(senderPsid, receivedMessage) {
-  let response;
-
-  // Checks if the message contains text
-  if (receivedMessage.text) {
-    // Create the payload for a basic text message, which
-    // will be added to the body of your request to the Send API
-    response = {
-      'text': `You sent the message: '${receivedMessage.text}'. Now send me an attachment!`
-    };
-  } else if (receivedMessage.attachments) {
-
-    // Get the URL of the message attachment
-    let attachmentUrl = receivedMessage.attachments[0].payload.url;
-    response = {
-      'attachment': {
-        'type': 'template',
-        'payload': {
-          'template_type': 'generic',
-          'elements': [{
-            'title': 'Is this the right picture?',
-            'subtitle': 'Tap a button to answer.',
-            'image_url': attachmentUrl,
-            'buttons': [
-              {
-                'type': 'postback',
-                'title': 'Yes!',
-                'payload': 'yes',
-              },
-              {
-                'type': 'postback',
-                'title': 'No!',
-                'payload': 'no',
-              }
-            ],
-          }]
-        }
-      }
-    };
-  }
-
-  // Send the response message
-  callSendAPI(senderPsid, response);
-}
-
-// Handles messaging_postbacks events
-function handlePostback(senderPsid, receivedPostback) {
-  let response;
-
-  // Get the payload for the postback
-  let payload = receivedPostback.payload;
-
-  // Set the response based on the postback payload
-  if (payload === 'yes') {
-    response = { 'text': 'Thanks!' };
-  } else if (payload === 'no') {
-    response = { 'text': 'Oops, try sending another image.' };
-  }
-  // Send the message to acknowledge the postback
-  callSendAPI(senderPsid, response);
-}
-
-// Sends response messages via the Send API
-function callSendAPI(senderPsid, response) {
-
-  // The page access token we have generated in your app settings
-  const PAGE_ACCESS_TOKEN = process.env.PAGE_ACCESS_TOKEN;
-
-  // Construct the message body
-  let requestBody = {
-    'recipient': {
-      'id': senderPsid
-    },
-    'message': response
-  };
-
-  // Send the HTTP request to the Messenger Platform
-  request({
-    'uri': 'https://graph.facebook.com/v2.6/me/messages',
-    'qs': { 'access_token': PAGE_ACCESS_TOKEN },
-    'method': 'POST',
-    'json': requestBody
-  }, (err, _res, _body) => {
-    if (!err) {
-      console.log('Message sent!');
-    } else {
-      console.error('Unable to send message:' + err);
+  //connect to dialogflow
+const apiAiService = apiai(process.env.API_AI_CLIENT_ACCESS_TOKEN, {
+    language: "en",
+    requestSource: "fb"
+  });
+  const sessionIds = new Map();
+/*
+ * All callbacks for Messenger are POST-ed. They will be sent to the same
+ * webhook. Be sure to subscribe your app to your page to receive callbacks
+ * for your page. 
+ * https://developers.facebook.com/docs/messenger-platform/product-overview/setup#subscribe_app
+ *
+ */
+app.post("/webhook/", function (req, res) {
+    var data = req.body;
+    // Make sure this is a page subscription
+    if (data.object == "page") {
+      // Iterate over each entry
+      // There may be multiple if batched
+      data.entry.forEach(function (pageEntry) {
+        var pageID = pageEntry.id;
+        var timeOfEvent = pageEntry.time;
+  
+        // Iterate over each messaging event
+        pageEntry.messaging.forEach(function (messagingEvent) {
+          if (messagingEvent.message) {
+            receivedMessage(messagingEvent);
+          } else {
+            console.log("Webhook received unknown messagingEvent: ",messagingEvent);
+          }
+        });
+      });
+      // Assume all went well.
+      // You must send back a 200, within 20 seconds
+      res.sendStatus(200);
     }
   });
-}
 
-// listen for requests :)
-var listener = app.listen(process.env.PORT, function() {
-  console.log('Your app is listening on port ' + listener.address().port);
+  function receivedMessage(event) {
+    var senderID = event.sender.id;
+    var recipientID = event.recipient.id;
+    var timeOfMessage = event.timestamp;
+    var message = event.message;
+  
+    if (!sessionIds.has(senderID)) {
+      sessionIds.set(senderID, uuid.v1());
+    }
+  
+    var messageId = message.mid;
+    var appId = message.app_id;
+    var metadata = message.metadata;
+  
+    // You may get a text or attachment but not both
+    var messageText = message.text;
+    var messageAttachments = message.attachments;
+  
+    if (messageText) {
+      //send message to api.ai
+      sendToApiAi(senderID, messageText);
+    } else if (messageAttachments) {
+      handleMessageAttachments(messageAttachments, senderID);
+    }
+  }
+  function sendToApiAi(sender, text) {
+    sendTypingOn(sender);
+    let apiaiRequest = apiAiService.textRequest(text, {
+      sessionId: sessionIds.get(sender)
+    });
+  
+    apiaiRequest.on("response", response => {
+      if (isDefined(response.result)) {
+        handleApiAiResponse(sender, response);
+      }
+    });
+  
+    apiaiRequest.on("error", error => console.error(error));
+    apiaiRequest.end();
+  }
+  
+  /*
+ * Turn typing indicator on
+ *
+ */
+const sendTypingOn = (recipientId) => {
+    var messageData = {
+      recipient: {
+        id: recipientId
+      },
+      sender_action: "typing_on"
+    };
+    callSendAPI(messageData);
+  }
+
+  /*
+ * Call the Send API. The message data goes in the body. If successful, we'll 
+ * get the message id in a response 
+ *
+ */
+const callSendAPI = async (messageData) => {
+
+    const url = "https://graph.facebook.com/v3.0/me/messages?access_token=" + process.env.PAGE_ACCESS_TOKEN;
+      await axios.post(url, messageData)
+        .then(function (response) {
+          if (response.status == 200) {
+            var recipientId = response.data.recipient_id;
+            var messageId = response.data.message_id;
+            if (messageId) {
+              console.log(
+                "Successfully sent message with id %s to recipient %s",
+                messageId,
+                recipientId
+              );
+            } else {
+              console.log(
+                "Successfully called Send API for recipient %s",
+                recipientId
+              );
+            }
+          }
+        })
+        .catch(function (error) {
+          console.log(error.response.headers);
+        });
+    }
+    const isDefined = (obj) => {
+        if (typeof obj == "undefined") {
+          return false;
+        }
+        if (!obj) {
+          return false;
+        }
+        return obj != null;
+      }
+
+    function handleApiAiResponse(sender, response) {
+        let responseText = response.result.fulfillment.speech;
+        let responseData = response.result.fulfillment.data;
+        let messages = response.result.fulfillment.messages;
+        let action = response.result.action;
+        let contexts = response.result.contexts;
+        let parameters = response.result.parameters;
+      
+        sendTypingOff(sender);
+      
+       if (responseText == "" && !isDefined(action)) {
+          //api ai could not evaluate input.
+          console.log("Unknown query" + response.result.resolvedQuery);
+          sendTextMessage(
+            sender,
+            "I'm not sure what you want. Can you be more specific?"
+          );
+        } else if (isDefined(action)) {
+          handleApiAiAction(sender, action, responseText, contexts, parameters);
+        } else if (isDefined(responseData) && isDefined(responseData.facebook)) {
+          try {
+            console.log("Response as formatted message" + responseData.facebook);
+            sendTextMessage(sender, responseData.facebook);
+          } catch (err) {
+            sendTextMessage(sender, err.message);
+          }
+        } else if (isDefined(responseText)) {
+          sendTextMessage(sender, responseText);
+        }
+      }
+      /*
+ * Turn typing indicator off
+ *
+ */
+const sendTypingOff = (recipientId) => {
+    var messageData = {
+      recipient: {
+        id: recipientId
+      },
+      sender_action: "typing_off"
+    };
+  
+    callSendAPI(messageData);
+  }
+  const sendTextMessage = async (recipientId, text) => {
+    var messageData = {
+      recipient: {
+        id: recipientId
+      },
+      message: {
+        text: text
+      }
+    };
+    await callSendAPI(messageData);
+  }
+  function handleApiAiAction(sender, action, responseText, contexts, parameters) {
+    switch (action) {
+     case "send-text":
+       var responseText = "This is example of Text message."
+       sendTextMessage(sender, responseText);
+       break;
+     default:
+       //unhandled action, just send back the text
+     sendTextMessage(sender, responseText);
+   }
+ }
+
+// Spin up the server
+app.listen(app.get("port"), function () {
+  console.log("Magic Started on port", app.get("port"));
 });
