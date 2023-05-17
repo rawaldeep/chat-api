@@ -60,6 +60,9 @@ app.post('/webhook', (req, res) => {
         // Iterates over each entry - there may be multiple if batched
         body.entry.forEach(function(entry) {
 
+            entry.messaging.forEach(function (messagingEvent) {
+                console.log(messagingEvent);
+            });
             // Gets the body of the webhook event
             let webhookEvent = entry.messaging[0];
             console.log(webhookEvent);
@@ -73,7 +76,6 @@ app.post('/webhook', (req, res) => {
             if (webhookEvent.message) {
                 handleMessage(senderPsid, webhookEvent.message);
             } else if (webhookEvent.postback) {
-                console.log(webhookEvent.postback);
                 handlePostback(senderPsid, webhookEvent.postback);
             }
         });
