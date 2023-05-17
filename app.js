@@ -1,15 +1,16 @@
 const express = require('express');
 const request = require('request');
-const RiveScript = require('rivescript');
+const bodyParser = require('body-parser');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Create a new RiveScript bot and load the replies
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
-const bot = new RiveScript();
-bot.loadDirectory('./brain').then(() => bot.sortReplies());
-
+app.get('/', (req, res) => {
+  res.send('Hello, Facebook Messenger Chatbot!');
+});
 
 app.get('/webhook', (req, res) => {
   if (req.query['hub.verify_token'] === process.env.VERIFY_TOKEN) {
@@ -19,7 +20,7 @@ app.get('/webhook', (req, res) => {
   }
 });
 
-app.post('/webhook', express.json(), (req, res) => {
+app.post('/webhook', (req, res) => {
   const { body } = req;
   if (body.object === 'page') {
     body.entry.forEach(entry => {
@@ -27,20 +28,24 @@ app.post('/webhook', express.json(), (req, res) => {
       const senderId = webhookEvent.sender.id;
       const messageText = webhookEvent.message.text;
 
-      // Reply to the received message using RiveScript
-      const reply = bot.reply('user', messageText);
-
-      // Send the reply back to the user
+      // Process the received message and send a reply
+      const reply = processMessage(messageText);
       sendMessage(senderId, reply);
     });
     res.sendStatus(200);
   }
 });
 
+function processMessage(message) {
+  // Process the message and generate a reply
+  // Example logic: Echo back the received message
+  return `You said: ${message}`;
+}
+
 function sendMessage(recipientId, message) {
   request({
     uri: 'https://graph.facebook.com/v14.0/me/messages',
-    qs: { access_token: process.env.PAGE_ACCESS_TOKEN },
+    qs: { access_token: process.env.PAGE_ACCESS_TOKEN  },
     method: 'POST',
     json: {
       recipient: { id: recipientId },
