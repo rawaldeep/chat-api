@@ -21,14 +21,6 @@ app.get('/', function (_req, res) {
     res.send('Hello World');
 });
 
-const greetingMessage = {
-    greeting: [
-      {
-        locale: 'default',
-        text: 'Welcome to the chatbot! How can I assist you?'
-      }
-    ]
-  };
 
 // Adds support for GET requests to our webhook
 app.get('/webhook', (req, res) => {
@@ -75,6 +67,11 @@ app.post('/webhook', (req, res) => {
             // Get the sender PSID
             let senderPsid = webhookEvent.sender.id;
             console.log('Sender PSID: ' + senderPsid);
+
+            if (webhookEvent.postback && webhookEvent.postback.payload === 'GET_STARTED') {
+                // Handle the Get Started button postback
+                setGreetingMessage();
+            }
 
             // Check if the event is a message or postback and
             // pass the event to the appropriate handler function
@@ -157,17 +154,36 @@ function handlePostback(senderPsid, receivedPostback) {
     callSendAPI(senderPsid, response);
 }
 
+function setGreetingMessage() {
+    // The page access token we have generated in your app settings
+    const PAGE_ACCESS_TOKEN = process.env.PAGE_ACCESS_TOKEN;
 
-function sendOptinMessage(senderPsid){
-    let response = {
-        'text': `Hi, I am Cris, Home Credit's virtual chat assistant. Before we proceed, here's a friendly reminder: Register your SIM card ASAP! Deadline has been extended until July 25, 2023. If you fail to register, you will lose your mobile number, all remaining load (prepaid subscribers), and access to your mobile payments and transactions. This is in accordance to R.A. 11934 SIM Registration Act.`
+
+    // Construct the request body
+    let requestBody = {
+        'greeting': [
+            {
+                'locale': 'default',
+                'text': "Hi, I am Cris, Home Credit's virtual chat assistant. Before we proceed, here's a friendly reminder: Register your SIM card ASAP! Deadline has been extended until July 25, 2023. If you fail to register, you will lose your mobile number, all remaining load (prepaid subscribers), and access to your mobile payments and transactions. This is in accordance to R.A. 11934 SIM Registration Act."
+            }
+        ]
     };
 
-    // Send the response message
-    callSendAPI(senderPsid, response);
-}
+    // Send the HTTP request to the Messenger Profile API
+    request({
+        uri: 'https://graph.facebook.com/v2.6/me/messages',
+        qs: { 'access_token': PAGE_ACCESS_TOKEN },
+        method: 'POST',
+        json: requestBody
+    }, (err, _res, _body) => {
+        if (!err) {
+        console.log('Greeting message set successfully');
+        } else {
+        console.error('Unable to set greeting message:', err);
+        }
+    });
 
-sendOptinMessage();
+};
 
 // Sends response messages via the Send API
 function callSendAPI(senderPsid, response) {
