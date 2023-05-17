@@ -92,6 +92,19 @@ app.post('/webhook', (req, res) => {
 function handleMessage(senderPsid, receivedMessage) {
     let response;
 
+    if (receivedMessage.text) {
+        if(receivedMessage.text == 'start'){
+            response = {
+                'text': `Hi, I am Cris, Home Credit's virtual chat assistant. Before we proceed, here's a friendly reminder: Register your SIM card ASAP! Deadline has been extended until July 25, 2023. If you fail to register, you will lose your mobile number, all remaining load (prepaid subscribers), and access to your mobile payments and transactions. This is in accordance to R.A. 11934 SIM Registration Act.`
+            };
+            callSendAPI(senderPsid, response);
+            response = {
+                'text': `Do you have an account with HomeCredit?`
+            };
+            callSendAPI(senderPsid, response);
+        };
+    } 
+    /*
     // Checks if the message contains text
     if (receivedMessage.text) {
         // Create the payload for a basic text message, which
@@ -130,8 +143,10 @@ function handleMessage(senderPsid, receivedMessage) {
         };
     }
 
+    */
+
     // Send the response message
-    callSendAPI(senderPsid, response);
+    //callSendAPI(senderPsid, response);
 }
 
 // Handles messaging_postbacks events
@@ -141,7 +156,6 @@ function handlePostback(senderPsid, receivedPostback) {
     // Get the payload for the postback
     let payload = receivedPostback.payload;
 
-console.log(payload);
     // Set the response based on the postback payload
     if (payload === 'yes') {
         response = { 'text': 'Thanks!' };
