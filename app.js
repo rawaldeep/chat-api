@@ -58,10 +58,6 @@ app.post('/webhook', (req, res) => {
     if (body.object === 'page') {
         // Iterates over each entry - there may be multiple if batched
         body.entry.forEach(function(entry) {
-
-            entry.messaging.forEach(function (messagingEvent) {
-                console.log(messagingEvent);
-            });
             // Gets the body of the webhook event
             let webhookEvent = entry.messaging[0];
             console.log(webhookEvent);
@@ -95,6 +91,32 @@ function handleMessage(senderPsid, receivedMessage) {
     if (receivedMessage.text) {
         if(receivedMessage.text == 'start'){
             setGreetingMessage(senderPsid);
+            response = {
+                'attachment': {
+                    'type': 'template',
+                    'payload': {
+                        'template_type': 'generic',
+                        'elements': [{
+                            'title': 'Is this the right picture?',
+                            'subtitle': 'Tap a button to answer.',
+                            'image_url': attachmentUrl,
+                            'buttons': [
+                                {
+                                    'type': 'postback',
+                                    'title': 'Yes - I have an account!',
+                                    'payload': 'yes',
+                                },
+                                {
+                                    'type': 'postback',
+                                    'title': 'No - but i am interested in your products and services',
+                                    'payload': 'no',
+                                }
+                            ],
+                        }]
+                    }
+                }
+            };
+            callSendAPI(senderPsid, response);
         };
     } 
     /*
