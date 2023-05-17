@@ -55,7 +55,7 @@ function sendMessage(recipientId, message) {
     if (!error && response.statusCode === 200) {
       console.log('Message sent successfully');
     } else {
-      console.error('Error sending message:', error, response, body);
+      console.error('Error sending message:', error, message);
     }
   });
 }
