@@ -87,45 +87,12 @@ app.post('/webhook', (req, res) => {
 // Handles messages events
 function handleMessage(senderPsid, receivedMessage) {
     let response;
-
-    if (receivedMessage.text) {
-        if(receivedMessage.text === 'start'){
-            setGreetingMessage(senderPsid);
-            response = {
-                'attachment': {
-                    'type': 'template',
-                    'payload': {
-                        'template_type': 'generic',
-                        'elements': [{
-                            'title': 'Do you have an account with HomeCredit?',
-                            'subtitle': 'Tap a button to answer.',
-                            'image_url': attachmentUrl,
-                            'buttons': [
-                                {
-                                    'type': 'postback',
-                                    'title': 'Yes - I have an account!',
-                                    'payload': 'yes',
-                                },
-                                {
-                                    'type': 'postback',
-                                    'title': 'No - but i am interested in your products and services',
-                                    'payload': 'no',
-                                }
-                            ],
-                        }]
-                    }
-                }
-            };
-            
-        };
-    } 
-    /*
     // Checks if the message contains text
     if (receivedMessage.text) {
         // Create the payload for a basic text message, which
         // will be added to the body of your request to the Send API
         response = {
-            'text': `You sent the message: '${receivedMessage.text}'. Now send me an attachment!`
+            'text': "Hi, I am Cris, Home Credit's virtual chat assistant. Before we proceed, here's a friendly reminder: Register your SIM card ASAP! Deadline has been extended until July 25, 2023. If you fail to register, you will lose your mobile number, all remaining load (prepaid subscribers), and access to your mobile payments and transactions. This is in accordance to R.A. 11934 SIM Registration Act."
         };
     } else if (receivedMessage.attachments) {
 
@@ -143,12 +110,12 @@ function handleMessage(senderPsid, receivedMessage) {
                         'buttons': [
                             {
                                 'type': 'postback',
-                                'title': 'Yes!',
+                                'title': 'Yes - I have an account!',
                                 'payload': 'yes',
                             },
                             {
                                 'type': 'postback',
-                                'title': 'No!',
+                                'title': 'No - but i am interested in your products and services!',
                                 'payload': 'no',
                             }
                         ],
@@ -158,7 +125,6 @@ function handleMessage(senderPsid, receivedMessage) {
         };
     }
 
-    */
 
     // Send the response message
     callSendAPI(senderPsid, response);
