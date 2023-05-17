@@ -142,9 +142,7 @@ function handlePostback(senderPsid, receivedPostback) {
     // Get the payload for the postback
     let payload = receivedPostback.payload;
 
-    if (payload === 'get_started_payload') {
-        response = { "text": "Hi, I am Cris, Home Credit's virtual chat assistant. Before we proceed, here's a friendly reminder: Register your SIM card ASAP! Deadline has been extended until July 25, 2023. If you fail to register, you will lose your mobile number, all remaining load (prepaid subscribers), and access to your mobile payments and transactions. This is in accordance to R.A. 11934 SIM Registration Act." }
-    }
+    
 
 
     // Set the response based on the postback payload
@@ -154,16 +152,23 @@ function handlePostback(senderPsid, receivedPostback) {
         response = { 'text': 'Oops, try sending another image.' };
     }
     // Send the message to acknowledge the postback
-    callSendAPI(senderPsid, response);
+
+    if (payload === 'get_started_payload') {
+        setGreetingMessage(senderPsid)
+    }else{
+        callSendAPI(senderPsid, response);
+    }
+    
 }
 
-function setGreetingMessage() {
+function setGreetingMessage(senderPsid) {
     // The page access token we have generated in your app settings
     const PAGE_ACCESS_TOKEN = process.env.PAGE_ACCESS_TOKEN;
-
-
-    // Construct the request body
+    // Construct the message body
     let requestBody = {
+        'recipient': {
+            'id': senderPsid
+        },
         'greeting': [
             {
                 'locale': 'default',
