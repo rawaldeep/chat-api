@@ -56,7 +56,6 @@ app.post('/webhook', (req, res) => {
 
     // Checks if this is an event from a page subscription
     if (body.object === 'page') {
-        console.log('check trigger');
         // Iterates over each entry - there may be multiple if batched
         body.entry.forEach(function(entry) {
 
@@ -141,8 +140,6 @@ function handlePostback(senderPsid, receivedPostback) {
 
     // Get the payload for the postback
     let payload = receivedPostback.payload;
-
-    console.log(payload);
 
 
     // Set the response based on the postback payload
