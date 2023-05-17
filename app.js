@@ -68,8 +68,8 @@ app.post('/webhook', (req, res) => {
             let senderPsid = webhookEvent.sender.id;
             console.log('Sender PSID: ' + senderPsid);
 
-            if (webhookEvent.postback && webhookEvent.postback.payload === 'GET_STARTED') {
-                // Handle the Get Started button postback
+            if (webhookEvent.message && webhookEvent.message.is_echo) {
+                // Handle the message echoes event
                 setGreetingMessage();
             }
 
