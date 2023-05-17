@@ -89,7 +89,7 @@ function handleMessage(senderPsid, receivedMessage) {
     let response;
 
     if (receivedMessage.text) {
-        if(receivedMessage.text == 'start'){
+        if(receivedMessage.text === 'start'){
             setGreetingMessage(senderPsid);
             response = {
                 'attachment': {
@@ -116,7 +116,7 @@ function handleMessage(senderPsid, receivedMessage) {
                     }
                 }
             };
-            callSendAPI(senderPsid, response);
+            
         };
     } 
     /*
@@ -161,7 +161,7 @@ function handleMessage(senderPsid, receivedMessage) {
     */
 
     // Send the response message
-    //callSendAPI(senderPsid, response);
+    callSendAPI(senderPsid, response);
 }
 
 // Handles messaging_postbacks events
