@@ -94,14 +94,7 @@ function handleMessage(senderPsid, receivedMessage) {
 
     if (receivedMessage.text) {
         if(receivedMessage.text == 'start'){
-            response = {
-                'text': `Hi, I am Cris, Home Credit's virtual chat assistant. Before we proceed, here's a friendly reminder: Register your SIM card ASAP! Deadline has been extended until July 25, 2023. If you fail to register, you will lose your mobile number, all remaining load (prepaid subscribers), and access to your mobile payments and transactions. This is in accordance to R.A. 11934 SIM Registration Act.`
-            };
-            callSendAPI(senderPsid, response);
-            let response2 = {
-                'text': `Do you have an account with HomeCredit?`
-            };
-            callSendAPI(senderPsid, response2);
+            setGreetingMessage(senderPsid);
         };
     } 
     /*
