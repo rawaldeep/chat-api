@@ -59,7 +59,7 @@ app.post('/webhook', (req, res) => {
         console.log('check trigger');
         // Iterates over each entry - there may be multiple if batched
         body.entry.forEach(function(entry) {
-console.log(entry);
+
             // Gets the body of the webhook event
             let webhookEvent = entry.messaging[0];
             console.log(webhookEvent);
@@ -68,16 +68,12 @@ console.log(entry);
             let senderPsid = webhookEvent.sender.id;
             console.log('Sender PSID: ' + senderPsid);
 
-            if (webhookEvent.message && webhookEvent.message.is_echo) {
-                // Handle the message echoes event
-                setGreetingMessage();
-            }
-
             // Check if the event is a message or postback and
             // pass the event to the appropriate handler function
             if (webhookEvent.message) {
                 handleMessage(senderPsid, webhookEvent.message);
             } else if (webhookEvent.postback) {
+                console.log(webhookEvent.postback);
                 handlePostback(senderPsid, webhookEvent.postback);
             }
         });
@@ -143,6 +139,8 @@ function handlePostback(senderPsid, receivedPostback) {
 
     // Get the payload for the postback
     let payload = receivedPostback.payload;
+
+
 
     // Set the response based on the postback payload
     if (payload === 'yes') {
