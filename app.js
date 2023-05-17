@@ -55,7 +55,7 @@ app.post('/webhook', (req, res) => {
 
     // Checks if this is an event from a page subscription
     if (body.object === 'page') {
-
+        console.log('check trigger');
         // Iterates over each entry - there may be multiple if batched
         body.entry.forEach(function(entry) {
 
