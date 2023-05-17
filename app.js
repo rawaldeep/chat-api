@@ -1,85 +1,59 @@
 const express = require('express');
-const bodyParser = require('body-parser');
-const request = require('request-promise');
+const request = require('request');
+const { RiveScript } = require('rivescript');
 
 const app = express();
+const PORT = process.env.PORT || 3000;
 
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+// Create a new RiveScript bot and load the replies
+const bot = new RiveScript();
+bot.loadDirectory('./brain').then(() => bot.sortReplies());
 
-// Your verify token. Should be a random string.
-let VERIFY_TOKEN = process.env.VERIFY_TOKEN
 
 app.get('/webhook', (req, res) => {
-  if (req.query['hub.mode'] === 'subscribe' && req.query['hub.verify_token'] === process.env.VERIFY_TOKEN) {
-    console.log('Validating webhook');
-    res.status(200).send(req.query['hub.challenge']);
+  if (req.query['hub.verify_token'] === process.env.VERIFY_TOKEN) {
+    res.send(req.query['hub.challenge']);
   } else {
-    console.error('Failed validation. Make sure the validation tokens match.');
-    res.sendStatus(403);          
-  }  
+    res.send('Invalid verify token');
+  }
 });
 
-app.post('/webhook', (req, res) => {
-  let data = req.body;
+app.post('/webhook', express.json(), (req, res) => {
+  const { body } = req;
+  if (body.object === 'page') {
+    body.entry.forEach(entry => {
+      const webhookEvent = entry.messaging[0];
+      const senderId = webhookEvent.sender.id;
+      const messageText = webhookEvent.message.text;
 
-  if (data.object === 'page') {
-    data.entry.forEach((entry) => {
-      let pageID = entry.id;
-      let timeOfEvent = entry.time;
+      // Reply to the received message using RiveScript
+      const reply = bot.reply('user', messageText);
 
-      entry.messaging.forEach((event) => {
-        if (event.message) {
-          receivedMessage(event);
-        }
-      });
+      // Send the reply back to the user
+      sendMessage(senderId, reply);
     });
     res.sendStatus(200);
   }
 });
 
-function receivedMessage(event) {
-  let senderID = event.sender.id;
-  let recipientID = event.recipient.id;
-  let timeOfMessage = event.timestamp;
-  let message = event.message;
-
-  let messageId = message.mid;
-  let messageText = message.text;
-
-  if (messageText) {
-    sendTextMessage(senderID, "Echo: " + messageText);
-  }
-}
-
-function sendTextMessage(recipientId, messageText) {
-  let messageData = {
-    recipient: {
-      id: recipientId
-    },
-    message: {
-      text: messageText
-    }
-  };
-
-  callSendAPI(messageData);
-}
-
-function callSendAPI(messageData) {
+function sendMessage(recipientId, message) {
   request({
-    uri: 'https://graph.facebook.com/v2.6/me/messages',
+    uri: 'https://graph.facebook.com/v14.0/me/messages',
     qs: { access_token: process.env.PAGE_ACCESS_TOKEN },
     method: 'POST',
-    json: messageData
-  }, (error, response, body) => {
-    if (!error && response.statusCode == 200) {
-      console.log("Successfully sent message");
-    } else {
-      console.error("Unable to send message");
-      console.error(response);
-      console.error(error);
+    json: {
+      recipient: { id: recipientId },
+      message: { text: message }
     }
-  });  
+  }, (error, response, body) => {
+    if (!error && response.statusCode === 200) {
+      console.log('Message sent successfully');
+    } else {
+      console.error('Error sending message:', error);
+    }
+  });
 }
 
-app.listen(process.env.PORT || 3000, () => console.log('Webhook server is listening, port 3000'));
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});
