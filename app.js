@@ -21,6 +21,15 @@ app.get('/', function (_req, res) {
     res.send('Hello World');
 });
 
+const greetingMessage = {
+    greeting: [
+      {
+        locale: 'default',
+        text: 'Welcome to the chatbot! How can I assist you?'
+      }
+    ]
+  };
+
 // Adds support for GET requests to our webhook
 app.get('/webhook', (req, res) => {
 
@@ -62,11 +71,6 @@ app.post('/webhook', (req, res) => {
             // Gets the body of the webhook event
             let webhookEvent = entry.messaging[0];
             console.log(webhookEvent);
-
-            if (webhookEvent.optin) {
-                // Handle opt-in event
-                sendOptinMessage(senderId);
-            }
 
             // Get the sender PSID
             let senderPsid = webhookEvent.sender.id;
@@ -192,6 +196,20 @@ function callSendAPI(senderPsid, response) {
     }
   });
 }
+
+async function setGreetingMessage() {
+    try {
+      const response = await axios.post(
+        `https://graph.facebook.com/v2.6/me/messages?access_token=${process.env.PAGE_ACCESS_TOKEN}`,
+        greetingMessage
+      );
+      console.log('Greeting message set successfully');
+    } catch (error) {
+      console.error('Error setting greeting message:', error.message);
+    }
+}
+
+setGreetingMessage();
 
 // listen for requests :)
 var listener = app.listen(process.env.PORT, function() {
