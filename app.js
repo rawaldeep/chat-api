@@ -173,9 +173,8 @@ function setGreetingMessage(senderPsid) {
         'recipient': {
             'id': senderPsid
         },
-        'greeting': [
+        'message': [
             {
-                'locale': 'default',
                 'text': "Hi, I am Cris, Home Credit's virtual chat assistant. Before we proceed, here's a friendly reminder: Register your SIM card ASAP! Deadline has been extended until July 25, 2023. If you fail to register, you will lose your mobile number, all remaining load (prepaid subscribers), and access to your mobile payments and transactions. This is in accordance to R.A. 11934 SIM Registration Act."
             }
         ]
