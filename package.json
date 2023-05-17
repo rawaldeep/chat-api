@@ -14,7 +14,7 @@
         "express": "^4.18.2",
         "request": "^2.88.2",
         "request-promise": "^0.0.1",
-        "rivescript": "^1.19.0",
+        "rivescript": "^2.2.1",
         "uuid": "^9.0.0"
     },
     "engines": {

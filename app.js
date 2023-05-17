@@ -1,13 +1,12 @@
-'use strict';
-
-const express = require("express");
+const express = require('express');
 const request = require('request');
-const { RiveScript } = require('rivescript');
+const RiveScript = require('rivescript');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Create a new RiveScript bot and load the replies
+
 const bot = new RiveScript();
 bot.loadDirectory('./brain').then(() => bot.sortReplies());
 
