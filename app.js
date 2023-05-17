@@ -167,6 +167,7 @@ function sendOptinMessage(senderPsid){
     callSendAPI(senderPsid, response);
 }
 
+sendOptinMessage();
 
 // Sends response messages via the Send API
 function callSendAPI(senderPsid, response) {
@@ -197,19 +198,7 @@ function callSendAPI(senderPsid, response) {
   });
 }
 
-async function setGreetingMessage() {
-    try {
-      const response = await axios.post(
-        `https://graph.facebook.com/v2.6/me/messages?access_token=${process.env.PAGE_ACCESS_TOKEN}`,
-        greetingMessage
-      );
-      console.log('Greeting message set successfully');
-    } catch (error) {
-      console.error('Error setting greeting message:', error.message);
-    }
-}
 
-setGreetingMessage();
 
 // listen for requests :)
 var listener = app.listen(process.env.PORT, function() {
