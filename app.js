@@ -142,7 +142,7 @@ function handlePostback(senderPsid, receivedPostback) {
     // Get the payload for the postback
     let payload = receivedPostback.payload;
 
-    
+    console.log(payload);
 
 
     // Set the response based on the postback payload
